@@ -43,14 +43,13 @@ class DynamicImport {
               this.lastDirectory = folderName
             }
 
-            var key
             if (this.prefixlessFolders.indexOf(folderName) >= 0) {
-              key = file.replace('.js', '')
+              var key = file
             } else {
-              key = fileName.replace(this.root, '').replace(/\//g, '')
+              var key = fileName.replace(this.root, '').replace(/\//g, '')
             }
 
-            this.writeImportStatement(key, fileName)
+            this.writeImportStatement(key.replace('.js', ''), fileName)
           }
         }
       })
