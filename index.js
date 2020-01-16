@@ -4,6 +4,7 @@ var configs = require(`../../.dynamic_import_config.json`)
 class DynamicImport {
   root = configs.root
   exceptions = configs.exceptions.map(file => `${this.root}/${file}`)
+  prefixlessFolders = configs.prefixlessFolders.map(file => `${this.root}/${file}`)
 
   run = () => {
     this.initializeFile()
@@ -24,7 +25,7 @@ class DynamicImport {
 
   readFolder = (folderName) => {
     fs.readdirSync(folderName).map((file) => {
-      let fileName = (`${folderName}/${file}`).replace('//', '/')
+      let fileName = (`${folderName}/${file}`)
 
       if (this.exceptions.indexOf(fileName) >= 0) {
         return
@@ -42,7 +43,14 @@ class DynamicImport {
               this.lastDirectory = folderName
             }
 
-            this.writeImportStatement(file.replace('.js', ''), fileName)
+            var key
+            if (this.prefixlessFolders.indexOf(folderName) >= 0) {
+              key = file.replace('.js', '')
+            } else {
+              key = fileName.replace(this.root, '').replace(/\//g, '')
+            }
+
+            this.writeImportStatement(key, fileName)
           }
         }
       })
