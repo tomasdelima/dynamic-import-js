@@ -47,3 +47,9 @@ Run the following at the root folder:
 `npm run make-import`
 
 This will create a file named `local-modules.js` at the `root` path with all the `require` statements, globally assigned.
+
+# Naming Pattern
+
+Given a file, relative to `root`, named `User/Form.js`, it's respective generated line will be `global.UserForm = require('./User/Form.js').default`.
+
+Therefore, it is recommended to wisely name the folders, as they will be used to name the assigned global resources.
