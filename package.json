@@ -1,5 +1,5 @@
 {
-  "name": "dynamic-import",
+  "name": "dynamic-import-js",
   "version": "1.0.0",
   "description": "Generates an import file for all your JS and JSX files",
   "main": "index.js",
@@ -8,7 +8,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/tomasdelima/dynamic-import.git"
+    "url": "git+https://github.com/tomasdelima/dynamic-import-js.git"
   },
   "keywords": [
     "js",
@@ -20,7 +20,7 @@
   "author": "Tomás de Lima",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/tomasdelima/dynamic-import/issues"
+    "url": "https://github.com/tomasdelima/dynamic-import-js/issues"
   },
-  "homepage": "https://github.com/tomasdelima/dynamic-import#readme"
+  "homepage": "https://github.com/tomasdelima/dynamic-import-js#readme"
 }

@@ -1,44 +1,53 @@
 var fs = require('fs')
-var appRoot = '../..'
-var { exceptions, root } = require(`${appRoot}/.dynamic_import_config.json`)
-var scanRoot = `../../${root}`
+var configs = require(`../../.dynamic_import_config.json`)
 
-exceptions = exceptions.map(file => `${scanRoot}/${file}`)
+class DynamicImport {
+  root = configs.root
+  exceptions = configs.exceptions.map(file => `${this.root}/${file}`)
 
-fs.writeFile(`${scanRoot}/local-modules.js`, '', null, () => {})
+  run = () => {
+    this.initializeFile()
+    this.readFolder(this.root)
+  }
 
-var writeImportStatement = (key, fileName) => {
-  fs.appendFile(`${scanRoot}/local-modules.js`, `global.${key} = require('.${fileName.replace(scanRoot, '')}').default\n`, null, () => {})
-}
+  initializeFile = () => {
+    fs.writeFile(`${this.root}/local-modules.js`, '', null, () => {})
+  }
 
-var appendNewLine
+  appendFile = (string, fileName) => {
+    fs.appendFile(`${this.root}/local-modules.js`, string, null, () => {})
+  }
 
-var readFolder = (folderName) => {
-  fs.readdirSync(folderName).map((file) => {
-    let fileName = (`${folderName}/${file}`).replace('//', '/')
+  writeImportStatement = (key, fileName) => {
+    this.appendFile(`global.${key} = require('.${fileName.replace(this.root, '')}').default\n`)
+  }
 
-    if (exceptions.indexOf(fileName) >= 0) {
-      return
-    }
+  readFolder = (folderName) => {
+    fs.readdirSync(folderName).map((file) => {
+      let fileName = (`${folderName}/${file}`).replace('//', '/')
 
-    fs.stat(fileName, {}, (err, stat) => {
-      if (err) {
-        console.error(err)
-      } else {
-        if (stat.isDirectory()) {
-          readFolder(fileName)
-        } else if (file.endsWith('.js') || file.endsWith('.jsx')) {
-          appendNewLine = true
-          writeImportStatement(file.replace('.js', ''), fileName)
-        }
+      if (this.exceptions.indexOf(fileName) >= 0) {
+        return
       }
-    })
-  })
 
-  if (appendNewLine) {
-    fs.appendFile(`${scanRoot}/local-modules.js`, '\n', null, () => {})
-    appendNewLine = false
+      fs.stat(fileName, {}, (err, stat) => {
+        if (err) {
+          console.error(err)
+        } else {
+          if (stat.isDirectory()) {
+            this.readFolder(fileName)
+          } else if (file.endsWith('.js') || file.endsWith('.jsx')) {
+            if (this.lastDirectory != folderName) {
+              this.appendFile(`\n// .${folderName.replace(this.root, '')}\n`)
+              this.lastDirectory = folderName
+            }
+
+            this.writeImportStatement(file.replace('.js', ''), fileName)
+          }
+        }
+      })
+    })
   }
 }
 
-readFolder(scanRoot)
+new DynamicImport().run()
