@@ -2,59 +2,72 @@ var fs = require('fs')
 var configs = require(`../../.dynamic_import_config.json`)
 
 class DynamicImport {
-  root = configs.root
-  exceptions = configs.exceptions.map(file => `${this.root}/${file}`)
-  prefixlessFolders = configs.prefixlessFolders.map(file => `${this.root}/${file}`)
-
-  run = () => {
-    this.initializeFile()
-    this.readFolder(this.root)
+  constructor (folder) {
+    this.folder  = folder
+    this.entries = []
+    this.folderImports = []
   }
 
-  initializeFile = () => {
-    fs.writeFile(`${this.root}/local-modules.js`, '', null, () => {})
+  run () {
+    fs.writeFileSync(`${configs.root}/local-modules.js`, this.read())
   }
 
-  appendFile = (string, fileName) => {
-    fs.appendFile(`${this.root}/local-modules.js`, string, null, () => {})
+  isPresent () {
+    return this.entries.length + this.folderImports.length > 0
   }
 
-  writeImportStatement = (key, fileName) => {
-    this.appendFile(`global.${key} = require('.${fileName.replace(this.root, '')}').default\n`)
+  toString () {
+    let comment = `// .${this.folder.replace(configs.root, '')}`
+    let entries = this.entries.join("\n")
+    let folders = this.folderImports.filter(folderImport => folderImport.isPresent()).join("\n\n")
+
+    if (entries && folders) {
+      entries = `${entries}\n`
+    }
+
+    return [comment, entries, folders].filter(part => part.length).join("\n")
   }
 
-  readFolder = (folderName) => {
-    fs.readdirSync(folderName).map((file) => {
-      let fileName = (`${folderName}/${file}`)
+  addEntry (key, filePath) {
+    this.entries.push(`global.${key} = require('.${filePath}').default`)
+  }
 
-      if (this.exceptions.indexOf(fileName) >= 0) {
+  read () {
+    let folderName = this.folder
+
+    fs.readdirSync(folderName).forEach(file => {
+      let key, fileName = `${folderName}/${file}`
+
+      if (configs.exceptions.includes(fileName.replace(`${configs.root}/`, ''))) {
         return
       }
 
-      fs.stat(fileName, {}, (err, stat) => {
-        if (err) {
-          console.error(err)
-        } else {
-          if (stat.isDirectory()) {
-            this.readFolder(fileName)
-          } else if (file.endsWith('.js') || file.endsWith('.jsx')) {
-            if (this.lastDirectory != folderName) {
-              this.appendFile(`\n// .${folderName.replace(this.root, '')}\n`)
-              this.lastDirectory = folderName
-            }
+      try {
+        let stat = fs.statSync(fileName)
 
-            if (this.prefixlessFolders.indexOf(folderName) >= 0) {
-              var key = file
-            } else {
-              var key = fileName.replace(this.root, '').replace(/\//g, '')
-            }
-
-            this.writeImportStatement(key.replace('.js', ''), fileName)
-          }
+        if (stat.isDirectory()) {
+          this.folderImports.push(new DynamicImport(fileName).read())
+          return
         }
-      })
+
+        if (!/\.jsx?$/.test(file)) {
+          return
+        }
+
+        if (configs.prefixlessFolders.includes(folderName.replace(`${configs.root}/`, ''))) {
+          key = file
+        } else {
+          key = fileName.replace(`${configs.root}/`, '').replace(/\//g, '')
+        }
+
+        this.addEntry(key.replace('.js', ''), fileName.replace(configs.root, ''))
+      } catch (err) {
+        console.log(err)
+      }
     })
+
+    return this
   }
 }
 
-new DynamicImport().run()
+new DynamicImport(configs.root).run()
