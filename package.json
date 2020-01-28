@@ -1,6 +1,6 @@
 {
   "name": "dynamic-import-js",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Generates an import file for all your JS and JSX files",
   "main": "index.js",
   "scripts": {
